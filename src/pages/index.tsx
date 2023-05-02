@@ -9,8 +9,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const supabase = useSupabaseClient();
-  const [stream, setStream] = useState(true);
-  const [input, setInput] = useState("");
+  const [question, setQuestion] = useState("");
   const [output, setOutput] = useState("");
   const [inflight, setInflight] = useState(false);
 
@@ -26,35 +25,34 @@ export default function Home() {
       setOutput("");
 
       try {
-        if (stream) {
-          // If streaming, we need to use fetchEventSource directly
-          await fetchEventSource(
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat`,
-            {
-              method: "POST",
-              body: JSON.stringify({ input }),
-              headers: { "Content-Type": "application/json" },
-              onmessage(ev) {
-                setOutput((o) => o + ev.data);
-              },
-            }
-          );
-          setInput("");
-        } else {
-          // If not streaming, we can use the supabase client
-          const { data } = await supabase.functions.invoke("chat", {
-            body: { input },
-          });
-          setOutput(data.text);
-          setInput("");
-        }
+        // If streaming, we need to use fetchEventSource directly
+        await fetchEventSource(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat`,
+          {
+            method: "POST",
+            body: JSON.stringify({ question }),
+            headers: { "Content-Type": "application/json" },
+            onmessage(ev) {
+              console.log(ev);
+              try {
+                const res = JSON.parse(ev.data);
+                if (res.data) {
+                  setOutput((o) => o + res.data);
+                }
+              } catch (error) {
+                // error ignored
+              }
+            },
+          }
+        );
+        setQuestion("");
       } catch (error) {
         console.error(error);
       } finally {
         setInflight(false);
       }
     },
-    [input, stream, inflight, supabase]
+    [question, inflight, supabase]
   );
 
   return (
@@ -74,19 +72,9 @@ export default function Home() {
             type="text"
             placeholder="Ask..."
             style={{ padding: 5, width: 200, marginBottom: 10 }}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
           />
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <input
-              type="checkbox"
-              id="stream"
-              style={{ marginRight: 5 }}
-              checked={stream}
-              onChange={() => setStream((s) => !s)}
-            />
-            <label htmlFor="stream">Stream</label>
-          </div>
         </form>
         <div style={{ width: 200 }}>Response: {output}</div>
       </main>

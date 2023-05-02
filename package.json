@@ -1,5 +1,5 @@
 {
-  "name": "langchain-template-supabase",
+  "name": "docs-chatbot-supabase",
   "version": "0.1.0",
   "private": true,
   "scripts": {

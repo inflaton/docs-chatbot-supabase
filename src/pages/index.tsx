@@ -32,16 +32,18 @@ export default function Home() {
             method: "POST",
             body: JSON.stringify({ question }),
             headers: { "Content-Type": "application/json" },
-            onmessage(ev) {
-              console.log(ev);
-              try {
-                const res = JSON.parse(ev.data);
-                if (res.data) {
-                  setOutput((o) => o + res.data);
-                }
-              } catch (error) {
-                // error ignored
+            onmessage(event) {
+              console.log(event.data);
+              const parsedData = JSON.parse(event.data);
+              if (parsedData.token) {
+                setOutput((o) => o + parsedData.token);
               }
+            },
+            onclose() {
+              console.log("Connection closed by the server");
+            },
+            onerror(err) {
+              console.log("There was an error from server", err);
             },
           }
         );
